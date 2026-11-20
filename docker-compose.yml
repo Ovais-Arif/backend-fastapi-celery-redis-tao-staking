@@ -1,0 +1,39 @@
+services:
+  app:
+    build: .
+    command: uvicorn app.main:app --workers 4 --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    environment:
+      AUTH_TOKEN: "your_bearer_token"
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MONGO_URI: mongodb://mongo:27017  # MongoDB connection
+    depends_on:
+      - redis
+      - mongo
+  worker:
+    build: .
+    command: celery -A app.task.sentiment_based_staking_task worker --loglevel=debug
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MONGO_URI: mongodb://mongo:27017  # MongoDB connection
+    depends_on:
+      - redis
+      - mongo
+  redis:
+    image: redis:6.2
+    ports:
+      - "6379:6379"# Multi-container setup configuration
+
+  mongo:
+    image: mongo:6.0
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db  # Persist MongoDB data
+
+volumes:
+  mongo_data:
+
